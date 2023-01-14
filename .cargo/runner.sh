@@ -10,15 +10,15 @@ LIMINE_GIT_URL="https://github.com/limine-bootloader/limine.git"
 KERNEL=$1
 
 # Clone the `limine` repository if we don't have it yet.
-#if [ ! -d target/limine ]; then
-    #git clone $LIMINE_GIT_URL --depth=1 --branch v3.0-branch-binary target/limine
-#fi
+if [ ! -d target/limine ]; then
+    git clone $LIMINE_GIT_URL --depth=1 --branch v3.0-branch-binary target/limine
+fi
 
 # Make sure we have an up-to-date version of the bootloader.
-#cd target/limine
-#git fetch
-#make
-#cd -
+cd target/limine
+git fetch
+make
+cd -
 
 # Copy the needed files into an ISO image.
 mkdir -p target/iso_root
@@ -41,7 +41,7 @@ target/limine/limine-deploy $KERNEL.iso
 qemu-system-x86_64 \
     -bios /usr/share/ovmf/OVMF.fd \
     -machine q35 -cpu qemu64 -M smm=off \
-    -D target/log.txt -d int,guest_errors -no-reboot \
+    -D target/log.txt -d int,guest_errors -no-reboot -no-shutdown \
     -smp 4 \
     -m 8G \
     $KERNEL.iso

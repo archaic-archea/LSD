@@ -1,21 +1,32 @@
-use limine::LimineKernelAddressRequest;
+use limine::{LimineKernelAddressRequest, LimineMemoryMapEntryType};
 use x86_64::{structures::paging::{PageTable, PageTableFlags, page_table::PageTableEntry, PhysFrame}, PhysAddr, VirtAddr, registers::control::{Cr3, Cr3Flags}};
 use crate::{*, memory::req_page};
 
 static mut PML4: PageTable = PageTable::new();
 
-static _KERN_ADDR: LimineKernelAddressRequest = LimineKernelAddressRequest::new(0);
+static KERN_ADDR: LimineKernelAddressRequest = LimineKernelAddressRequest::new(0);
 
 pub fn paging_init() {
     let memmap = MMR.get_response().get().unwrap();
+    let _kern_addr = KERN_ADDR.get_response().get().unwrap();
 
     unsafe {
         for entry in memmap.memmap() {
-            let phys = PhysAddr::new(entry.base);
-            let virt = phys.switch_form();
+            match entry.typ {
+                LimineMemoryMapEntryType::BadMemory => (),
+                LimineMemoryMapEntryType::Reserved => (),
+                _ => {
+                    println!("Mapping section of type {:?} with page length of {}", entry.typ, entry.len / 4096);
 
-            map_virt(virt, &mut PML4, phys);
-            println!("Mapped section of type {:?}", entry.typ);
+                    for i in 0..entry.len / 4096 {
+                        let phys = PhysAddr::new(entry.base + (4096 * i));
+                        let virt = phys.switch_form();
+            
+                        map_virt(virt, &mut PML4, phys);
+                    }
+                }
+            }
+
         }
 
         let pml4_virt = VirtAddr::new((&mut PML4 as *mut PageTable) as u64);
@@ -76,7 +87,15 @@ pub fn add_tables(virt_addr: VirtAddr, pml4: &mut PageTable) -> &mut PageTable {
 
 impl AddrForm<VirtAddr> for PhysAddr {
     fn switch_form(&self) -> VirtAddr {
-        VirtAddr::new_truncate(self.as_u64() + crate::HHDM.get_response().get().unwrap().offset)
+        let hhdm = crate::HHDM.get_response().get().unwrap();
+
+        let result = self.as_u64().overflowing_add(hhdm.offset);
+        
+        if result.1 {
+            panic!("Overflow occured, tried adding offset 0x{:x} to physical address {:?}", hhdm.offset, self)
+        }
+
+        VirtAddr::new_truncate(result.0)
     }
 }
 
