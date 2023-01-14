@@ -1,69 +1,47 @@
 #![no_std]
 #![no_main]
 
-mod io;
+use core::ops::Deref;
 
-use limine::{LimineBootInfoRequest, LimineHhdmRequest, LimineMemmapRequest, LimineFramebufferRequest};
+use limine::LimineSmpInfo;
+//use limine::LimineBootInfoRequest;
+use lsd_limine::{*, drivers::output::terminal::shift};
 
-static BOOTLOADER_INFO: LimineBootInfoRequest = LimineBootInfoRequest::new(0);
+//static BOOTLOADER_INFO: LimineBootInfoRequest = LimineBootInfoRequest::new(0);
 
-/// TODO: Enable HHDM
 /// TODO: Use Memory map's provided physical address and map them based off HHDM response's offset
 
-//static HHDM: LimineHhdmRequest = LimineHhdmRequest::new(0);
-static MMR: LimineMemmapRequest = LimineMemmapRequest::new(0);
-static FRAME: LimineFramebufferRequest = LimineFramebufferRequest::new(0);
-
-/// Kernel Entry Point
-///
-/// `_start` is defined in the linker script as the entry point for the ELF file.
-/// Unless the [`Entry Point`](limine::LimineEntryPointRequest) feature is requested,
-/// the bootloader will transfer control to this function.
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-    println!("hello, world!");
+    lsd_limine::init();
 
-    if let Some(bootinfo) = BOOTLOADER_INFO.get_response().get() {
-        println!(
-            "booted by {} v{}",
-            bootinfo.name.to_str().unwrap().to_str().unwrap(),
-            bootinfo.version.to_str().unwrap().to_str().unwrap(),
-        );
+    println!("Thingy!");
+
+    let smp = SMP.get_response().get().unwrap();
+
+    for i in 0..smp.cpu_count {
+        let cpus = &smp.cpus;
+        
+        let core = unsafe {cpus.deref().as_ptr().add(i as usize)};
+
+        unsafe {
+            //(*core).goto_address = thread_main;
+        }
     }
 
-    /*let offset: u64;
-
-    if let Some(hhdm) = HHDM.get_response().get() {
-        println!(
-            "Provided offset is 0x{:x}",
-            hhdm.offset
-        );
-
-        offset = hhdm.offset;
-    } else {
-        panic!("Failed to get HHDM");
-    }*/
-
-    for entry in MMR.get_response().get().unwrap().memmap() {
-        println!("type: {:?} base: 0x{:x}, len: 0x{:x}", entry.typ, entry.base, entry.len);
-    }
-
-    let frames = FRAME.get_response().get().unwrap().framebuffers();
-    println!("frame location in vmem: 0x{:x}", frames[0].address.as_ptr().unwrap() as u64);
-    //println!("frame location in pmem: 0x{:x}", frames[0].address.as_ptr().unwrap() as u64 - offset);
-
-    loop {}
+    hlt_loop()
 }
 
 #[panic_handler]
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
-    println!("{}", info);
-    hcf();
+    println!("{:#?}", info);
+    hlt_loop()
 }
 
-/// Die, spectacularly.
-pub fn hcf() -> ! {
-    loop {
-        core::hint::spin_loop();
-    }
+pub extern "C" fn thread_main(info_ptr: *const LimineSmpInfo) -> ! {
+    let info = unsafe {&*info_ptr};
+
+    println!("Core started\n{:#?}", info);
+
+    loop {}
 }

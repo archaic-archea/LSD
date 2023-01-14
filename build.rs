@@ -1,4 +1,4 @@
-use std::{env, error::Error};
+use std::{env, error::Error, process::Command};
 
 fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Get the name of the package.
