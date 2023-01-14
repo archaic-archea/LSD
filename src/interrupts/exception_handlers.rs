@@ -12,6 +12,18 @@ pub extern "x86-interrupt" fn page_fault_handler(
 ) {
     use x86_64::registers::control::Cr2;
 
+    let error = error_code.bits();
+
+    unsafe {
+        core::arch::asm!(
+            "",
+            in("rax") error,
+            in("rcx") error,
+            in("rdx") error,
+        );
+    }
+    hlt_loop();
+
     println!("EXCEPTION: PAGE FAULT");
     println!("Accessed Address: {:?}", Cr2::read());
     println!("Error Code: {:?}", error_code);

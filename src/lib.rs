@@ -36,9 +36,9 @@ pub fn init() {
     memory::init_page_manager();
     //println!("Page manager initialized");
 
-    for entry in memorymap.memmap() {
-        println!("{:?} 0x{:x}", entry.typ, entry.base);
-    }
+    //for entry in memorymap.memmap() {
+        //println!("{:?} 0x{:x}", entry.typ, entry.base);
+    //}
 
     paging::paging_init();
     //println!("Paging initialized");

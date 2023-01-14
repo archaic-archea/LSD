@@ -409,9 +409,19 @@ pub fn init_page_manager() {
     }
 }
 
+pub fn zero_page(page: *mut Page) {
+    unsafe {
+        *page = Page([0; PAGE]);
+    }
+}
+
 pub fn req_page() -> (*mut Page, usize) {
     unsafe {
-        PAGE_MANAGER.req_page()
+        let page_data = PAGE_MANAGER.req_page();
+
+        zero_page(page_data.0);
+
+        page_data
     }
 }
 

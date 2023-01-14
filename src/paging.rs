@@ -2,8 +2,6 @@ use limine::{LimineKernelAddressRequest, LimineMemoryMapEntryType};
 use x86_64::{structures::paging::{PageTable, PageTableFlags, page_table::PageTableEntry, PhysFrame}, PhysAddr, VirtAddr, registers::control::{Cr3, Cr3Flags}};
 use crate::{*, memory::req_page};
 
-static mut PML4: PageTable = PageTable::new();
-
 static KERN_ADDR: LimineKernelAddressRequest = LimineKernelAddressRequest::new(0);
 
 pub fn paging_init() {
@@ -11,6 +9,8 @@ pub fn paging_init() {
     let _kern_addr = KERN_ADDR.get_response().get().unwrap();
 
     unsafe {
+        let pml4 = &mut *(req_page().0 as *mut PageTable);
+
         for entry in memmap.memmap() {
             match entry.typ {
                 LimineMemoryMapEntryType::BadMemory => (),
@@ -22,18 +22,20 @@ pub fn paging_init() {
                         let phys = PhysAddr::new(entry.base/* + (4096 * i)*/);
                         let virt = phys.switch_form();
             
-                        map_virt(virt, &mut PML4, phys);
+                        map_virt(virt, pml4, phys);
                     }
                 }
             }
 
         }
 
-        let pml4_virt = VirtAddr::new((&mut PML4 as *mut PageTable) as u64);
+        let pml4_virt = VirtAddr::from_ptr(pml4);
         let pml4_phys = pml4_virt.switch_form();
 
         println!("Mapping completed");
 
+        println!("Pml4 virt addr: {:?}", pml4_virt);
+        println!("Loading pml4 phys addr: {:?}", pml4_phys);
         Cr3::write(PhysFrame::from_start_address(pml4_phys).unwrap(), Cr3Flags::empty());
         println!("Cr3 loaded");
     }
