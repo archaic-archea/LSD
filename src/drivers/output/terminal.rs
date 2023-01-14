@@ -66,7 +66,7 @@ pub fn init() {
 			.expect("Failed to get framebuffer from frame response").as_ptr();
 		
 		*SCREEN.lock() = Some(frame);
-		*ADDRESS.lock() = Some(VirtAddr::new_truncate(frame.address.as_ptr().unwrap() as u64));
+		*ADDRESS.lock() = Some(VirtAddr::new(frame.address.as_ptr().unwrap() as u64));
 		crate::println!("{:#?}", frame_response.framebuffers.edid);
 	}
 }

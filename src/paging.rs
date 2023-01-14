@@ -19,7 +19,7 @@ pub fn paging_init() {
                     println!("Mapping section of type {:?} with page length of {}", entry.typ, entry.len / 4096);
 
                     for i in 0..entry.len / 4096 {
-                        let phys = PhysAddr::new(entry.base + (4096 * i));
+                        let phys = PhysAddr::new(entry.base/* + (4096 * i)*/);
                         let virt = phys.switch_form();
             
                         map_virt(virt, &mut PML4, phys);
@@ -95,7 +95,7 @@ impl AddrForm<VirtAddr> for PhysAddr {
             panic!("Overflow occured, tried adding offset 0x{:x} to physical address {:?}", hhdm.offset, self)
         }
 
-        VirtAddr::new_truncate(result.0)
+        VirtAddr::new(result.0)
     }
 }
 
@@ -110,7 +110,7 @@ impl AddrForm<PhysAddr> for VirtAddr {
             _ => ()
         }
 
-        PhysAddr::new_truncate(result.0)
+        PhysAddr::new(result.0)
     }
 }
 

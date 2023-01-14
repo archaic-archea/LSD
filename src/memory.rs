@@ -224,7 +224,7 @@ pub fn init_sect_manager() {
         for entry in mmap.memmap() {
             //println!("{:?}", entry.as_ptr());
             match entry.typ {
-                limine::LimineMemoryMapEntryType::Usable => SECTION_MANAGER.add_sect(Sect::new(entry.len as usize, PhysAddr::new_truncate(entry.base).switch_form().as_mut_ptr())),
+                limine::LimineMemoryMapEntryType::Usable => SECTION_MANAGER.add_sect(Sect::new(entry.len as usize, PhysAddr::new(entry.base).switch_form().as_mut_ptr())),
                 _ => ()
             }
         }
