@@ -1,6 +1,19 @@
-use std::{env, error::Error, process::Command};
+#![feature(fs_try_exists)]
+
+use std::{env, error::Error, fs};
 
 fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    // Check if there is a log file
+    if fs::try_exists("./target/log.txt").unwrap() == true {
+        // Delete log file
+        let result = fs::remove_file("./target/log.txt");
+
+        match result {
+            Ok(_) => (),
+            Err(val) => eprintln!("Error occured: {:#?}", val),
+        }
+    }
+
     // Get the name of the package.
     let kernel_name = env::var("CARGO_PKG_NAME")?;
 
