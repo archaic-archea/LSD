@@ -41,7 +41,7 @@ target/limine/limine-deploy $KERNEL.iso
 qemu-system-x86_64 \
     -bios /usr/share/ovmf/OVMF.fd \
     -machine q35 -cpu qemu64 -M smm=off \
-    -D target/log.txt -d int,guest_errors -no-reboot -no-shutdown \
+    -D target/log.txt -d int -no-reboot -no-shutdown \
     -smp 4 \
     -m 8G \
     $KERNEL.iso
